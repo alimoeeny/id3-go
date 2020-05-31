@@ -23,12 +23,14 @@ type Tagger interface {
 	Album() string
 	Year() string
 	Genre() string
+	Length() int
 	Comments() []string
 	SetTitle(string)
 	SetArtist(string)
 	SetAlbum(string)
 	SetYear(string)
 	SetGenre(string)
+	SetLength(int)
 	AllFrames() []v2.Framer
 	Frames(string) []v2.Framer
 	Frame(string) v2.Framer
