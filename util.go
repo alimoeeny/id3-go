@@ -57,3 +57,10 @@ func shiftBytesBack(file *os.File, start, offset int64) error {
 
 	return nil
 }
+
+func shiftBytesBackInMem(blob []byte, start, offset int64) []byte {
+	out := make([]byte, int64(len(blob))+offset)
+	copy(out, blob[:start])
+	copy(out[start+offset:], blob[start:])
+	return out
+}

@@ -4,6 +4,7 @@
 package id3
 
 import (
+	"bytes"
 	"errors"
 	"os"
 
@@ -47,6 +48,12 @@ type File struct {
 	file         *os.File
 }
 
+type Mp3Bytes struct {
+	Tagger
+	originalSize int
+	blob         []byte
+}
+
 // Parses an open file
 func Parse(file *os.File) (*File, error) {
 	res := &File{file: file}
@@ -55,6 +62,23 @@ func Parse(file *os.File) (*File, error) {
 		res.Tagger = v2Tag
 		res.originalSize = v2Tag.Size()
 	} else if v1Tag := v1.ParseTag(file); v1Tag != nil {
+		res.Tagger = v1Tag
+	} else {
+		// Add a new tag if none exists
+		res.Tagger = v2.NewTag(LatestVersion)
+	}
+
+	return res, nil
+}
+
+// NewMp3Bytes should match Parse above but for in memory mp3 data not on disk files
+func NewMp3Bytes(blob []byte) (*Mp3Bytes, error) {
+	res := &Mp3Bytes{blob: blob}
+
+	if v2Tag := v2.ParseTag(bytes.NewReader(blob)); v2Tag != nil {
+		res.Tagger = v2Tag
+		res.originalSize = v2Tag.Size()
+	} else if v1Tag := v1.ParseTag(bytes.NewReader(blob)); v1Tag != nil {
 		res.Tagger = v1Tag
 	} else {
 		// Add a new tag if none exists
@@ -114,4 +138,30 @@ func (f *File) Close() error {
 	}
 
 	return nil
+}
+
+// UpdateEditsIntoBytes is like Close above but for in memory mp3 data not on disk
+func (b *Mp3Bytes) UpdateEditsIntoBytes() (*[]byte, error) {
+	if !b.Dirty() {
+		return nil, nil
+	}
+	start := 0
+	offset := 0
+
+	switch b.Tagger.(type) {
+	case (*v1.Tag):
+		offset = v1.TagSize
+	case (*v2.Tag):
+		if b.Size() > b.originalSize {
+			start := int64(b.originalSize + v2.HeaderSize)
+			offset := int64(b.Tagger.Size() - b.originalSize)
+			b.blob = shiftBytesBackInMem(b.blob, start, offset)
+		}
+
+	default:
+		return nil, errors.New("Close: unknown tag version")
+	}
+
+	copy(b.blob[start:start:offset], b.Tagger.Bytes())
+	return &b.blob, nil
 }
