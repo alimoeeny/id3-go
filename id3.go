@@ -143,18 +143,18 @@ func (f *File) Close() error {
 // UpdateEditsIntoBytes is like Close above but for in memory mp3 data not on disk
 func (b *Mp3Bytes) UpdateEditsIntoBytes() (*[]byte, error) {
 	if !b.Dirty() {
-		return nil, nil
+		return &b.blob, nil
 	}
-	start := 0
-	offset := 0
+	start := int64(0)
+	offset := int64(0)
 
 	switch b.Tagger.(type) {
 	case (*v1.Tag):
 		offset = v1.TagSize
 	case (*v2.Tag):
 		if b.Size() > b.originalSize {
-			start := int64(b.originalSize + v2.HeaderSize)
-			offset := int64(b.Tagger.Size() - b.originalSize)
+			start = int64(b.originalSize + v2.HeaderSize)
+			offset = int64(b.Tagger.Size() - b.originalSize)
 			b.blob = shiftBytesBackInMem(b.blob, start, offset)
 		}
 
