@@ -150,7 +150,9 @@ func (b *Mp3Bytes) UpdateEditsIntoBytes() (*[]byte, error) {
 
 	switch b.Tagger.(type) {
 	case (*v1.Tag):
-		offset = v1.TagSize
+		//unless I am much mistaken in v1 the tags are at the end of the file
+		offset = len(b.blob) - v1.TagSize
+
 	case (*v2.Tag):
 		if b.Size() > b.originalSize {
 			start = int64(b.originalSize + v2.HeaderSize)
@@ -162,6 +164,7 @@ func (b *Mp3Bytes) UpdateEditsIntoBytes() (*[]byte, error) {
 		return nil, errors.New("Close: unknown tag version")
 	}
 
-	copy(b.blob[start:start:offset], b.Tagger.Bytes())
+	insert := b.Tagger.Bytes()
+	copy(b.blob[0:start+offset], insert)
 	return &b.blob, nil
 }
