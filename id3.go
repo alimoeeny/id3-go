@@ -151,7 +151,7 @@ func (b *Mp3Bytes) UpdateEditsIntoBytes() (*[]byte, error) {
 	switch b.Tagger.(type) {
 	case (*v1.Tag):
 		//unless I am much mistaken in v1 the tags are at the end of the file
-		offset = len(b.blob) - v1.TagSize
+		offset = int64(len(b.blob)) - v1.TagSize
 
 	case (*v2.Tag):
 		if b.Size() > b.originalSize {
