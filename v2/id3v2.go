@@ -8,6 +8,8 @@ import (
 	"github.com/mikkyang/id3-go/encodedbytes"
 	"io"
 	"os"
+
+	"github.com/alimoeeny/id3-go/encodedbytes"
 )
 
 const (
